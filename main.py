@@ -1,7 +1,7 @@
 """
-FastAPI Teams Notification Service
+FastAPI Notification Service
 
-This service receives webhook payloads and forwards notifications to Microsoft Teams channels.
+This service receives webhook payloads and forwards notifications to Microsoft Teams channels and Email.
 """
 
 from fastapi import FastAPI, HTTPException, Request
@@ -11,10 +11,11 @@ import structlog
 import logging
 import traceback
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 
 from teams_service import teams_notification_service, TeamsNotificationError
+from email_service import email_notification_service, EmailNotificationError
 from config import get_settings
 
 # --- Request Models ---
@@ -25,6 +26,17 @@ class NotificationPayload(BaseModel):
     title: Optional[str] = Field(None, description="Optional title for the notification")
     severity: Optional[str] = Field("info", description="Severity level: info, warning, error, success")
     additional_facts: Optional[Dict[str, str]] = Field(None, description="Additional key-value pairs to display")
+
+class EmailPayload(BaseModel):
+    """Payload model for Email notification"""
+    to_emails: List[str] = Field(..., description="List of recipient email addresses")
+    subject: str = Field(..., description="Email subject")
+    message: str = Field(..., description="Email message content")
+    cc_emails: Optional[List[str]] = Field(None, description="Optional CC recipients")
+    bcc_emails: Optional[List[str]] = Field(None, description="Optional BCC recipients")
+    html_message: Optional[str] = Field(None, description="Optional HTML version of the message")
+    url: Optional[str] = Field(None, description="Optional URL to include in the email")
+    additional_info: Optional[Dict[str, str]] = Field(None, description="Additional information to include")
 
 # --- Configuration ---
 settings = get_settings()
@@ -39,8 +51,8 @@ logger = structlog.get_logger()
 
 # --- FastAPI App Configuration ---
 app = FastAPI(
-    title="Teams Notification Service",
-    description="Webhook service for forwarding notifications to Microsoft Teams channels",
+    title="Notification Service",
+    description="Webhook service for forwarding notifications to Microsoft Teams channels and Email",
     version="1.0.0",
     debug=settings.debug,
     docs_url="/docs" if settings.debug else None,
@@ -213,6 +225,92 @@ def _get_severity_color(severity: Optional[str]) -> str:
         "success": "28A745"    # Green
     }
     return color_map.get(severity.lower() if severity else "info", "0078D4")
+
+# --- Email Notification Endpoint ---
+@app.post("/notify/email", tags=["Notifications"])
+async def send_email_notification(payload: EmailPayload):
+    """
+    Send an email notification via SMTP
+    
+    This endpoint receives an email payload and forwards it to the configured SMTP server.
+    
+    **Payload Structure:**
+    - `to_emails`: List of recipient email addresses (required)
+    - `subject`: Email subject (required)
+    - `message`: Email message content (required)
+    - `cc_emails`: Optional list of CC recipients
+    - `bcc_emails`: Optional list of BCC recipients
+    - `html_message`: Optional HTML version of the message
+    - `url`: Optional URL to include in the email
+    - `additional_info`: Optional dictionary of additional information
+    
+    **Example Payload:**
+    ```json
+    {
+        "to_emails": ["user@example.com"],
+        "subject": "Deployment Notification",
+        "message": "Deployment completed successfully",
+        "url": "https://example.com/deployment/123",
+        "additional_info": {
+            "Environment": "Production",
+            "Version": "1.2.3"
+        }
+    }
+    ```
+    """
+    logger.info(
+        "Received email notification request",
+        to=payload.to_emails,
+        subject=payload.subject,
+        cc=payload.cc_emails,
+        bcc_count=len(payload.bcc_emails) if payload.bcc_emails else 0
+    )
+    
+    try:
+        # Send email
+        result = await email_notification_service.send_email(
+            to_emails=payload.to_emails,
+            subject=payload.subject,
+            message=payload.message,
+            cc_emails=payload.cc_emails,
+            bcc_emails=payload.bcc_emails,
+            html_message=payload.html_message,
+            url=payload.url,
+            additional_info=payload.additional_info
+        )
+        
+        logger.info(
+            "Email notification sent successfully",
+            result=result
+        )
+        
+        return {
+            "status": "success",
+            "message": "Email sent successfully",
+            "details": result,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except EmailNotificationError as e:
+        logger.error(
+            "Failed to send email notification",
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to send email notification: {str(e)}"
+        )
+    
+    except Exception as e:
+        logger.error(
+            "Unexpected error sending email notification",
+            error=str(e),
+            traceback=traceback.format_exc()
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 # --- Application Info ---
 logger.info(
