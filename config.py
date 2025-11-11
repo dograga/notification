@@ -1,5 +1,5 @@
 """
-Configuration settings for Teams Notification Service
+Configuration settings for Notification Service
 """
 
 import os
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Application settings
-    app_name: str = "Teams Notification Service"
+    app_name: str = "Notification Service"
     app_version: str = "1.0.0"
     environment: str = "local"
     debug: bool = False
@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     
     # Microsoft Teams Notification settings
     teams_webhook_url: Optional[str] = None
+    
+    # Email/SMTP settings
+    smtp_server: Optional[str] = None
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_use_tls: bool = True
+    sender_email: Optional[str] = None
+    sender_name: str = "Notification Service"
     
     model_config = SettingsConfigDict(
         env_file=".env",
