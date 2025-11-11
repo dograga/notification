@@ -1,21 +1,24 @@
-# Teams Notification Service
+# Notification Service
 
-A FastAPI-based webhook service that receives notification payloads and forwards them to Microsoft Teams channels.
+A FastAPI-based webhook service that receives notification payloads and forwards them to Microsoft Teams channels and Email via SMTP.
 
 ## Features
 
 - 🚀 Fast and lightweight FastAPI application
 - 📢 Forward notifications to Microsoft Teams channels
+- 📧 Send email notifications via SMTP
 - 🎨 Support for different severity levels (info, warning, error, success)
 - 📊 Rich message cards with custom fields
 - 🔗 Clickable URLs in notifications
 - 📝 Comprehensive logging with structlog
 - 🐛 Debug mode with interactive API documentation
+- 🎯 Multiple recipients support (To, CC, BCC)
 
 ## Prerequisites
 
 - Python 3.8 or higher
-- Microsoft Teams incoming webhook URL
+- Microsoft Teams incoming webhook URL (for Teams notifications)
+- SMTP server credentials (for email notifications)
 - pip or uv for package management
 
 ## Quick Start
@@ -36,14 +39,19 @@ pip install -r requirements.txt
 uv pip install -r requirements.txt
 ```
 
-### 3. Configure Teams Webhook
+### 3. Configure Notification Channels
 
+**For Teams Notifications:**
 1. Open Microsoft Teams
 2. Navigate to the channel where you want to receive notifications
 3. Click on the three dots (...) next to the channel name
 4. Select **Connectors** or **Workflows**
 5. Search for **Incoming Webhook**
 6. Configure the webhook and copy the webhook URL
+
+**For Email Notifications:**
+1. Obtain SMTP server credentials (Gmail, Outlook, or custom SMTP)
+2. For Gmail: Generate an App Password (see [EMAIL_SETUP.md](EMAIL_SETUP.md))
 
 ### 4. Set Environment Variables
 
@@ -53,10 +61,20 @@ Copy the example environment file:
 copy .env.example .env.local
 ```
 
-Edit `.env.local` and add your Teams webhook URL:
+Edit `.env.local` and configure your notification channels:
 
 ```bash
+# Teams Configuration
 TEAMS_WEBHOOK_URL=https://your-org.webhook.office.com/webhookb2/your-webhook-url
+
+# Email/SMTP Configuration
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_USE_TLS=true
+SENDER_EMAIL=your-email@gmail.com
+SENDER_NAME=Notification Service
 ```
 
 ### 5. Run the Service
@@ -81,9 +99,9 @@ Once the service is running in debug mode, access the interactive API documentat
 
 ## API Endpoints
 
-### POST `/notify`
+### POST `/notify` - Teams Notification
 
-Send a notification to Teams channel.
+Send a notification to Microsoft Teams channel.
 
 **Request Body:**
 
