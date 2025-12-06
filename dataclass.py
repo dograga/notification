@@ -14,3 +14,10 @@ class MemberUpdatePayload(BaseModel):
     appcode: str = Field(..., description="Application code")
     alert_type: str = Field(..., description="Type of alert")
     members: List[str] = Field(..., description="List of email addresses to add/remove")
+
+class GroupEmailPayload(BaseModel):
+    """Payload model for triggering group email"""
+    appcode: str = Field(..., description="Application code")
+    alert_type: str = Field(..., description="Type of alert")
+    email_content: str = Field(..., description="Email content (HTML supported)")
+    requestedby: str = Field(..., description="User who requested the email")

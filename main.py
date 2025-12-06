@@ -15,8 +15,9 @@ from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 
 from firestore_service import firestore_service, FirestoreError
+from smtp_service import smtp_service, SmtpError
 from config import get_settings
-from dataclass import EmailGroupPayload, MemberUpdatePayload
+from dataclass import EmailGroupPayload, MemberUpdatePayload, GroupEmailPayload
 
 # --- Configuration ---
 settings = get_settings()
@@ -113,7 +114,6 @@ async def health_check():
 async def add_email_group(payload: EmailGroupPayload):
     """
     Add a new email group
-    
     This endpoint adds a new email group configuration to Firestore.
     The group is uniquely identified by the combination of `appcode` and `alert_type`.
     """
@@ -202,6 +202,52 @@ async def remove_members(payload: MemberUpdatePayload):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/notify/group", tags=["Notifications"])
+async def send_group_email(payload: GroupEmailPayload):
+    """
+    Trigger an email to a group
+    """
+    try:
+        # 1. Check if group exists and get members
+        group = await firestore_service.get_email_group(payload.appcode, payload.alert_type)
+        if not group:
+            raise HTTPException(status_code=404, detail=f"Email group {payload.appcode}-{payload.alert_type} not found")
+            
+        members = group.get("members", [])
+        if not members:
+             raise HTTPException(status_code=400, detail="Group has no members")
+
+        # 2. Log notification
+        await firestore_service.log_notification(
+            appcode=payload.appcode,
+            alert_type=payload.alert_type,
+            requestedby=payload.requestedby,
+            email_content=payload.email_content,
+            recipients=members
+        )
+        
+        # 3. Send email
+        smtp_service.send_email(
+            to_emails=members,
+            subject=f"Alert: {payload.appcode} - {payload.alert_type}",
+            content=payload.email_content
+        )
+        
+        return {
+            "status": "success", 
+            "message": "Email sent successfully", 
+            "recipients_count": len(members)
+        }
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error("Failed to process group email", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Application Info ---

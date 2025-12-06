@@ -162,5 +162,58 @@ class FirestoreService:
             logger.error("Failed to remove members", error=str(e))
             raise FirestoreError(f"Failed to remove members: {str(e)}")
 
+            logger.error("Failed to remove members", error=str(e))
+            raise FirestoreError(f"Failed to remove members: {str(e)}")
+
+    async def get_email_group(self, appcode: str, alert_type: str) -> Dict[str, Any]:
+        """Get email group details"""
+        if not self.client:
+            raise FirestoreError("Firestore client is not initialized")
+            
+        doc_id = f"{appcode}-{alert_type}"
+        collection_name = "email_groups"
+        
+        try:
+            doc_ref = self.client.collection(collection_name).document(doc_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return None
+                
+            return doc.to_dict()
+            
+        except Exception as e:
+            logger.error("Failed to get email group", error=str(e))
+            raise FirestoreError(f"Failed to get email group: {str(e)}")
+
+    async def log_notification(self, appcode: str, alert_type: str, requestedby: str, email_content: str, recipients: List[str]):
+        """Log notification details"""
+        if not self.client:
+            raise FirestoreError("Firestore client is not initialized")
+            
+        collection_name = "notification_logs"
+        
+        try:
+            data = {
+                "appcode": appcode,
+                "alert_type": alert_type,
+                "requestedby": requestedby,
+                "email_content": email_content,
+                "recipients": recipients,
+                "timestamp": datetime.utcnow()
+            }
+            
+            self.client.collection(collection_name).add(data)
+            logger.info("Notification logged successfully", appcode=appcode, alert_type=alert_type)
+            
+        except Exception as e:
+            logger.error("Failed to log notification", error=str(e))
+            # Don't raise error here to avoid failing the main request if logging fails? 
+            # User requirement says "record these details", so maybe we should raise or just log error.
+            # I'll log error but allow flow to continue or raise? 
+            # Usually logging failure shouldn't stop the email, but requirement implies it's part of the process.
+            # I will raise FirestoreError to be safe and ensure data integrity as per "record these details".
+            raise FirestoreError(f"Failed to log notification: {str(e)}")
+
 # Global instance
 firestore_service = FirestoreService()

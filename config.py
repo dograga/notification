@@ -28,8 +28,18 @@ class Settings(BaseSettings):
     # CORS settings
     cors_origins: List[str] = ["*"]
     
+    # SMTP settings
+    smtp_host: Optional[str] = None
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    sender_email: Optional[str] = None
+    
     # Firestore settings
     firestore_project_id: Optional[str] = None
+    firestore_db_name: Optional[str] = "(default)"
+    firestore_email_groups_collection: str = "email_groups"
+    firestore_notification_logs_collection: str = "notification_logs"
     
     model_config = SettingsConfigDict(
         env_file=".env",
