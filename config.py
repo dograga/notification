@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Application settings
     app_name: str = "Notification Service"
     app_version: str = "1.0.0"
-    environment: str = "local"
+    environment: str = "dev"
     debug: bool = False
     
     # Server settings
@@ -28,17 +28,8 @@ class Settings(BaseSettings):
     # CORS settings
     cors_origins: List[str] = ["*"]
     
-    # Microsoft Teams Notification settings
-    teams_webhook_url: Optional[str] = None
-    
-    # Email/SMTP settings
-    smtp_server: Optional[str] = None
-    smtp_port: int = 587
-    smtp_username: Optional[str] = None
-    smtp_password: Optional[str] = None
-    smtp_use_tls: bool = True
-    sender_email: Optional[str] = None
-    sender_name: str = "Notification Service"
+    # Firestore settings
+    firestore_project_id: Optional[str] = None
     
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -47,15 +38,15 @@ class Settings(BaseSettings):
     )
 
 
-class LocalSettings(Settings):
-    """Local development settings"""
+class DevSettings(Settings):
+    """Development settings"""
     debug: bool = True
     reload: bool = True
     log_level: str = "DEBUG"
-    environment: str = "local"
+    environment: str = "dev"
     
     model_config = SettingsConfigDict(
-        env_file=".env.local",
+        env_file=".env.dev",
         case_sensitive=False,
         extra="ignore"
     )
@@ -77,13 +68,14 @@ class ProductionSettings(Settings):
 
 def get_settings_class():
     """Get settings class based on environment"""
-    env = os.getenv("ENVIRONMENT", "local").lower()
+    env = os.getenv("APP_ENV", "dev").lower()
     settings_map = {
-        "local": LocalSettings,
+        "dev": DevSettings,
+        "local": DevSettings, # Keep local mapped to dev for backward compatibility if needed, or just remove. User said default dev.
         "production": ProductionSettings,
         "prod": ProductionSettings
     }
-    return settings_map.get(env, LocalSettings)
+    return settings_map.get(env, DevSettings)
 
 
 @lru_cache()

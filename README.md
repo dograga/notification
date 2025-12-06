@@ -164,6 +164,41 @@ Send a notification to Microsoft Teams channel.
 }
 ```
 
+### POST `/notify/email` - Email Notification
+
+Send an email notification via SMTP.
+
+**Request Body:**
+
+```json
+{
+  "to_emails": ["user@example.com"],
+  "subject": "Deployment Notification",
+  "message": "Deployment completed successfully",
+  "cc_emails": ["manager@example.com"],
+  "url": "https://example.com/deployment/123",
+  "additional_info": {
+    "Environment": "Production",
+    "Version": "1.2.3"
+  }
+}
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `to_emails` | array | Yes | List of recipient email addresses |
+| `subject` | string | Yes | Email subject |
+| `message` | string | Yes | Email message content |
+| `cc_emails` | array | No | Optional CC recipients |
+| `bcc_emails` | array | No | Optional BCC recipients |
+| `html_message` | string | No | Custom HTML version |
+| `url` | string | No | URL to include in email |
+| `additional_info` | object | No | Additional information |
+
+For detailed email setup instructions, see [EMAIL_SETUP.md](EMAIL_SETUP.md).
+
 ### GET `/`
 
 Root endpoint with service information.
@@ -174,7 +209,9 @@ Health check endpoint.
 
 ## Usage Examples
 
-### Example 1: Simple Notification
+### Teams Notifications
+
+#### Example 1: Simple Teams Notification
 
 ```bash
 curl -X POST "http://localhost:8000/notify" \
@@ -182,7 +219,7 @@ curl -X POST "http://localhost:8000/notify" \
   -d "{\"url\": \"https://example.com/deployment/123\", \"message\": \"Deployment completed successfully\"}"
 ```
 
-### Example 2: Success Notification with Details
+#### Example 2: Success Notification with Details
 
 ```bash
 curl -X POST "http://localhost:8000/notify" \
@@ -190,15 +227,27 @@ curl -X POST "http://localhost:8000/notify" \
   -d "{\"url\": \"https://dashboard.example.com/deployments/456\", \"message\": \"Application version 2.5.0 deployed to production\", \"title\": \"Deployment Success\", \"severity\": \"success\", \"additional_facts\": {\"Environment\": \"Production\", \"Version\": \"2.5.0\"}}"
 ```
 
-### Example 3: Error Alert
+### Email Notifications
+
+#### Example 1: Simple Email
 
 ```bash
-curl -X POST "http://localhost:8000/notify" \
+curl -X POST "http://localhost:8000/notify/email" \
   -H "Content-Type: application/json" \
-  -d "{\"url\": \"https://logs.example.com/errors/789\", \"message\": \"Critical error in payment service\", \"title\": \"Critical Error\", \"severity\": \"error\", \"additional_facts\": {\"Service\": \"Payment\", \"Error Code\": \"PAY-500\"}}"
+  -d "{\"to_emails\": [\"user@example.com\"], \"subject\": \"Test Notification\", \"message\": \"This is a test email\"}"
 ```
 
-### Example 4: Python Client
+#### Example 2: Email with CC and Additional Info
+
+```bash
+curl -X POST "http://localhost:8000/notify/email" \
+  -H "Content-Type: application/json" \
+  -d "{\"to_emails\": [\"user@example.com\"], \"cc_emails\": [\"manager@example.com\"], \"subject\": \"Deployment Success\", \"message\": \"Application deployed to production\", \"url\": \"https://example.com/deployment/123\", \"additional_info\": {\"Environment\": \"Production\", \"Version\": \"1.2.3\"}}"
+```
+
+### Python Examples
+
+#### Teams Notification
 
 ```python
 import httpx
@@ -225,7 +274,36 @@ async def send_notification():
 asyncio.run(send_notification())
 ```
 
-### Example 5: PowerShell
+#### Email Notification
+
+```python
+import httpx
+import asyncio
+
+async def send_email():
+    url = "http://localhost:8000/notify/email"
+    payload = {
+        "to_emails": ["user@example.com"],
+        "subject": "Pipeline Completed",
+        "message": "Data pipeline execution completed successfully",
+        "url": "https://example.com/pipeline/run/42",
+        "additional_info": {
+            "Pipeline": "daily-etl-pipeline",
+            "Records": "1,234,567",
+            "Duration": "45 minutes"
+        }
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload)
+        print(response.json())
+
+asyncio.run(send_email())
+```
+
+### PowerShell Examples
+
+#### Teams Notification
 
 ```powershell
 $body = @{
@@ -240,6 +318,23 @@ $body = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:8000/notify" -Method Post -Body $body -ContentType "application/json"
+```
+
+#### Email Notification
+
+```powershell
+$body = @{
+    to_emails = @("user@example.com")
+    subject = "Deployment Notification"
+    message = "Deployment completed successfully"
+    url = "https://example.com/deployment/123"
+    additional_info = @{
+        Environment = "Production"
+        Version = "1.0.0"
+    }
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/notify/email" -Method Post -Body $body -ContentType "application/json"
 ```
 
 ## Integration with Pub/Sub
