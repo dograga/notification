@@ -104,5 +104,63 @@ class FirestoreService:
             )
             raise FirestoreError(f"Failed to add email group: {str(e)}")
 
+            raise FirestoreError(f"Failed to add email group: {str(e)}")
+
+    async def add_members(self, appcode: str, alert_type: str, members: List[str]) -> Dict[str, Any]:
+        """Add members to an existing email group"""
+        if not self.client:
+            raise FirestoreError("Firestore client is not initialized")
+            
+        doc_id = f"{appcode}-{alert_type}"
+        collection_name = "email_groups"
+        
+        try:
+            doc_ref = self.client.collection(collection_name).document(doc_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                raise ValueError(f"Email group for {appcode} and {alert_type} does not exist")
+                
+            doc_ref.update({
+                "members": firestore.ArrayUnion(members)
+            })
+            
+            logger.info("Members added successfully", appcode=appcode, alert_type=alert_type, count=len(members))
+            return {"appcode": appcode, "alert_type": alert_type, "added_members": members}
+            
+        except ValueError as ve:
+            raise ve
+        except Exception as e:
+            logger.error("Failed to add members", error=str(e))
+            raise FirestoreError(f"Failed to add members: {str(e)}")
+
+    async def remove_members(self, appcode: str, alert_type: str, members: List[str]) -> Dict[str, Any]:
+        """Remove members from an existing email group"""
+        if not self.client:
+            raise FirestoreError("Firestore client is not initialized")
+            
+        doc_id = f"{appcode}-{alert_type}"
+        collection_name = "email_groups"
+        
+        try:
+            doc_ref = self.client.collection(collection_name).document(doc_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                raise ValueError(f"Email group for {appcode} and {alert_type} does not exist")
+                
+            doc_ref.update({
+                "members": firestore.ArrayRemove(members)
+            })
+            
+            logger.info("Members removed successfully", appcode=appcode, alert_type=alert_type, count=len(members))
+            return {"appcode": appcode, "alert_type": alert_type, "removed_members": members}
+            
+        except ValueError as ve:
+            raise ve
+        except Exception as e:
+            logger.error("Failed to remove members", error=str(e))
+            raise FirestoreError(f"Failed to remove members: {str(e)}")
+
 # Global instance
 firestore_service = FirestoreService()

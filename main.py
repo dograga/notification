@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from firestore_service import firestore_service, FirestoreError
 from config import get_settings
-from dataclass import EmailGroupPayload
+from dataclass import EmailGroupPayload, MemberUpdatePayload
 
 # --- Configuration ---
 settings = get_settings()
@@ -169,6 +169,40 @@ async def add_email_group(payload: EmailGroupPayload):
             status_code=500,
             detail=f"Internal server error: {str(e)}"
         )
+
+@app.post("/email-groups/members/add", tags=["Configuration"])
+async def add_members(payload: MemberUpdatePayload):
+    """
+    Add members to an email group
+    """
+    try:
+        result = await firestore_service.add_members(
+            appcode=payload.appcode,
+            alert_type=payload.alert_type,
+            members=payload.members
+        )
+        return {"status": "success", "message": "Members added successfully", "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/email-groups/members/remove", tags=["Configuration"])
+async def remove_members(payload: MemberUpdatePayload):
+    """
+    Remove members from an email group
+    """
+    try:
+        result = await firestore_service.remove_members(
+            appcode=payload.appcode,
+            alert_type=payload.alert_type,
+            members=payload.members
+        )
+        return {"status": "success", "message": "Members removed successfully", "data": result}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Application Info ---
 logger.info(

@@ -25,8 +25,6 @@ def test_add_email_group_success(mock_firestore_client):
         appcode="TESTAPP",
         alert_type="CRITICAL",
         members=["test@example.com"],
-        alert_type="CRITICAL",
-        members=["test@example.com"],
         addedby="user@example.com",
         task_id="TASK-123"
     ))
@@ -40,7 +38,6 @@ def test_add_email_group_success(mock_firestore_client):
     call_args = mock_doc_ref.set.call_args[0][0]
     assert call_args["appcode"] == "TESTAPP"
     assert call_args["alert_type"] == "CRITICAL"
-    assert call_args["members"] == ["test@example.com"]
     assert call_args["members"] == ["test@example.com"]
     assert call_args["addedby"] == "user@example.com"
     assert call_args["task_id"] == "TASK-123"
@@ -67,7 +64,8 @@ def test_add_email_group_already_exists(mock_firestore_client):
                 appcode="TESTAPP",
                 alert_type="CRITICAL",
                 members=["test@example.com"],
-                addedby="user@example.com"
+                addedby="user@example.com",
+                task_id="TASK-123"
             )
         assert "already exists" in str(excinfo.value)
 
@@ -91,7 +89,8 @@ def test_add_email_group_firestore_error(mock_firestore_client):
                 appcode="TESTAPP",
                 alert_type="CRITICAL",
                 members=["test@example.com"],
-                addedby="user@example.com"
+                addedby="user@example.com",
+                task_id="TASK-123"
             )
         assert "Failed to add email group" in str(excinfo.value)
 
@@ -125,7 +124,6 @@ if __name__ == "__main__":
             appcode="TESTAPP",
             alert_type="CRITICAL",
             members=["test@example.com"],
-            members=["test@example.com"],
             addedby="user@example.com",
             task_id="TASK-123"
         ))
@@ -139,7 +137,6 @@ if __name__ == "__main__":
                 appcode="TESTAPP",
                 alert_type="CRITICAL",
                 members=["test@example.com"],
-                members=["test@example.com"],
                 addedby="user@example.com",
                 task_id="TASK-123"
             ))
@@ -147,3 +144,39 @@ if __name__ == "__main__":
             print("Caught expected error:", e)
             
         loop.close()
+
+def test_add_members(mock_firestore_client):
+    service = FirestoreService()
+    mock_collection = MagicMock()
+    mock_doc_ref = MagicMock()
+    mock_doc_snapshot = MagicMock()
+    
+    service.client.collection.return_value = mock_collection
+    mock_collection.document.return_value = mock_doc_ref
+    mock_doc_ref.get.return_value = mock_doc_snapshot
+    mock_doc_snapshot.exists = True
+    
+    import asyncio
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(service.add_members("APP", "ALERT", ["new@example.com"]))
+    loop.close()
+    
+    mock_doc_ref.update.assert_called()
+
+def test_remove_members(mock_firestore_client):
+    service = FirestoreService()
+    mock_collection = MagicMock()
+    mock_doc_ref = MagicMock()
+    mock_doc_snapshot = MagicMock()
+    
+    service.client.collection.return_value = mock_collection
+    mock_collection.document.return_value = mock_doc_ref
+    mock_doc_ref.get.return_value = mock_doc_snapshot
+    mock_doc_snapshot.exists = True
+    
+    import asyncio
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(service.remove_members("APP", "ALERT", ["old@example.com"]))
+    loop.close()
+    
+    mock_doc_ref.update.assert_called()
