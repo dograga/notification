@@ -20,13 +20,16 @@ class FirestoreService:
     def _initialize_client(self):
         """Initialize Firestore client"""
         try:
-            if settings.firestore_project_id:
-                self.client = firestore.Client(project=settings.firestore_project_id)
+            project_id = settings.firestore_project_id
+            db_name = settings.firestore_db_name
+            
+            if project_id:
+                self.client = firestore.Client(project=project_id, database=db_name)
             else:
                 # Attempt to use default credentials/project
-                self.client = firestore.Client()
+                self.client = firestore.Client(database=db_name)
             
-            logger.info("Firestore client initialized", project=self.client.project)
+            logger.info("Firestore client initialized", project=self.client.project, database=db_name)
         except Exception as e:
             logger.error("Failed to initialize Firestore client", error=str(e))
             self.client = None
@@ -61,7 +64,7 @@ class FirestoreService:
 
         # Create unique ID
         doc_id = f"{appcode}-{alert_type}"
-        collection_name = "email_groups"
+        collection_name = settings.firestore_email_groups_collection
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
@@ -112,7 +115,7 @@ class FirestoreService:
             raise FirestoreError("Firestore client is not initialized")
             
         doc_id = f"{appcode}-{alert_type}"
-        collection_name = "email_groups"
+        collection_name = settings.firestore_email_groups_collection
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
@@ -140,7 +143,7 @@ class FirestoreService:
             raise FirestoreError("Firestore client is not initialized")
             
         doc_id = f"{appcode}-{alert_type}"
-        collection_name = "email_groups"
+        collection_name = settings.firestore_email_groups_collection
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
@@ -171,7 +174,7 @@ class FirestoreService:
             raise FirestoreError("Firestore client is not initialized")
             
         doc_id = f"{appcode}-{alert_type}"
-        collection_name = "email_groups"
+        collection_name = settings.firestore_email_groups_collection
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
@@ -191,7 +194,7 @@ class FirestoreService:
         if not self.client:
             raise FirestoreError("Firestore client is not initialized")
             
-        collection_name = "notification_logs"
+        collection_name = settings.firestore_notification_logs_collection
         
         try:
             data = {
