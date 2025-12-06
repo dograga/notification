@@ -107,8 +107,6 @@ class FirestoreService:
             )
             raise FirestoreError(f"Failed to add email group: {str(e)}")
 
-            raise FirestoreError(f"Failed to add email group: {str(e)}")
-
     async def add_members(self, appcode: str, alert_type: str, members: List[str]) -> Dict[str, Any]:
         """Add members to an existing email group"""
         if not self.client:
@@ -162,9 +160,6 @@ class FirestoreService:
         except ValueError as ve:
             raise ve
         except Exception as e:
-            logger.error("Failed to remove members", error=str(e))
-            raise FirestoreError(f"Failed to remove members: {str(e)}")
-
             logger.error("Failed to remove members", error=str(e))
             raise FirestoreError(f"Failed to remove members: {str(e)}")
 
