@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+structlog
+google-cloud-firestore
+pydantic-settings
+python-dotenv
