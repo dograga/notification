@@ -44,7 +44,7 @@ class FirestoreService:
             
         try:
             logger.info("Fetching project environments", appcode=appcode)
-            projects_ref = self.client.collection("cloudresource_project")
+            projects_ref = self.client.collection(settings.firestore_projects_collection)
             query = projects_ref.where("app_code", "==", appcode).stream()
             
             environments = {"dev": "false", "uat": "false", "prod": "false"}

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # Firestore settings
     firestore_project_id: Optional[str] = None
     firestore_db_name: Optional[str] = "(default)"
+    firestore_projects_collection: str = "cloudresource_project"
     
     model_config = SettingsConfigDict(
         env_file=".env",
