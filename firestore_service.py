@@ -24,12 +24,12 @@ class FirestoreService:
             db_name = settings.firestore_db_name
             
             if project_id:
-                self.client = firestore.Client(project=project_id, database=db_name)
+                self.client = firestore.AsyncClient(project=project_id, database=db_name)
             else:
                 # Attempt to use default credentials/project
-                self.client = firestore.Client(database=db_name)
+                self.client = firestore.AsyncClient(database=db_name)
             
-            logger.info("Firestore client initialized", project=self.client.project, database=db_name)
+            logger.info("Firestore async client initialized", project=project_id, database=db_name)
         except Exception as e:
             logger.error("Failed to initialize Firestore client", error=str(e))
             self.client = None
@@ -70,7 +70,7 @@ class FirestoreService:
             doc_ref = self.client.collection(collection_name).document(doc_id)
             
             # Check if document exists
-            doc = doc_ref.get()
+            doc = await doc_ref.get()
             if doc.exists:
                 raise ValueError(f"Email group for {appcode} and {alert_type} already exists. Please add members to the existing group.")
             
@@ -84,7 +84,7 @@ class FirestoreService:
                 "timestamp": datetime.utcnow()
             }
             
-            doc_ref.set(data)
+            await doc_ref.set(data)
             
             logger.info(
                 "Email group added successfully",
@@ -117,12 +117,12 @@ class FirestoreService:
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
-            doc = doc_ref.get()
+            doc = await doc_ref.get()
             
             if not doc.exists:
                 raise ValueError(f"Email group for {appcode} and {alert_type} does not exist")
                 
-            doc_ref.update({
+            await doc_ref.update({
                 "members": firestore.ArrayUnion(members)
             })
             
@@ -145,12 +145,12 @@ class FirestoreService:
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
-            doc = doc_ref.get()
+            doc = await doc_ref.get()
             
             if not doc.exists:
                 raise ValueError(f"Email group for {appcode} and {alert_type} does not exist")
                 
-            doc_ref.update({
+            await doc_ref.update({
                 "members": firestore.ArrayRemove(members)
             })
             
@@ -173,7 +173,7 @@ class FirestoreService:
         
         try:
             doc_ref = self.client.collection(collection_name).document(doc_id)
-            doc = doc_ref.get()
+            doc = await doc_ref.get()
             
             if not doc.exists:
                 return None
@@ -201,7 +201,7 @@ class FirestoreService:
                 "timestamp": datetime.utcnow()
             }
             
-            self.client.collection(collection_name).add(data)
+            await self.client.collection(collection_name).add(data)
             logger.info("Notification logged successfully", appcode=appcode, alert_type=alert_type)
             
         except Exception as e:

@@ -24,12 +24,12 @@ class FirestoreService:
             db_name = settings.firestore_db_name
             
             if project_id:
-                self.client = firestore.Client(project=project_id, database=db_name)
+                self.client = firestore.AsyncClient(project=project_id, database=db_name)
             else:
                 # Attempt to use default credentials/project
-                self.client = firestore.Client(database=db_name)
+                self.client = firestore.AsyncClient(database=db_name)
             
-            logger.info("Firestore client initialized", project=self.client.project, database=db_name)
+            logger.info("Firestore async client initialized", project=project_id, database=db_name)
         except Exception as e:
             logger.error("Failed to initialize Firestore client", error=str(e))
             self.client = None
