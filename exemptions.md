@@ -2,6 +2,17 @@ GCP Security Exemption & Attestation Governance
 1. Introduction
 The GCP Security Command Center (SCC) Exemption Process provides a formal mechanism for Application Teams to temporarily bypass security findings that cannot be immediately remediated. This framework ensures that all security "silencing" is documented, risk-accepted by leadership, and periodically reviewed to prevent long-term security debt.
 
+1. Findings Ingestion Pipeline (Backend)
+The Findings Ingestion Pipeline is an automated backend process designed to ensure that the Service Portal always reflects the most current security posture.
+
+Trigger: A Cloud Scheduler Cron Job runs at set intervals 
+
+Collection: The process executes a service that calls the GCP Security Command Center (SCC) API to pull active findings.
+
+Data Enrichment: The raw finding data is cross-referenced with our CMDB/Internal Registry to append critical organizational context, including AppCode and BU_Code
+
+Storage: The enriched data is saved into Firestore DB, allowing the Service Portal to perform fast, filtered queries based on application ownership.
+
 2. Exemption Request Workflow (Intake)
 This workflow handles the initial request when a user identifies an SCC finding in a UAT or Prod environment that requires an exception.
 2.1 Process Logic
